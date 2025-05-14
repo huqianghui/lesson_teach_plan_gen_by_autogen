@@ -1,0 +1,11 @@
+autogen-core==0.4.0
+autogen-agentchat==0.4.0
+autogen-ext[azure]==0.4.0
+autogen-ext[openai]==0.4.0
+azure-monitor-opentelemetry
+python-dotenv
+pandas
+matplotlib
+mysql-connector-python
+rich
+pyarrow
