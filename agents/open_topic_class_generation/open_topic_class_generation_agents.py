@@ -154,19 +154,6 @@ When processing Markdown text containing multimedia elements, please follow thes
 
 Below is an example showing how to correctly format and add the termination signal:
 
-Input:
-```
-# 数据结构基础课程
-
-## 学习目标
-- 了解基本数据结构
-- 掌握数组和链表操作
-
-![数组示例图](https://example.com/array.jpg?size=medium&quality=high)
-
-[视频教程](https://example.com/video-tutorial?autoplay=true&t=30s)
-```
-
 Output:
 # 数据结构基础课程
 
@@ -212,7 +199,7 @@ def create_team()->SelectorGroupChat:
     markdown_content_formator = AssistantAgent(
             "markdwon_content_formator",
             description="An agent that formats markdown content by removing query parameters from image and video URLs.",
-            model_client=model_client,
+            model_client=low_model_client,
             model_client_stream=True,
             system_message=PROMPT_MARKDOWN_CONTENT_FORMAT)
     

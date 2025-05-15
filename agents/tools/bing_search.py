@@ -209,6 +209,12 @@ async def bing_search(
                 result["duration"] = item.get("duration", "")
 
             results.append(result)
+        
+        for result in results:
+            print("bing_search***********\n")
+            print("title:" + result["title"])
+            print("link:" + result["link"])
+
 
         return results[:num_results]
 

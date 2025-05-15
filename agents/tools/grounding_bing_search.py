@@ -139,6 +139,11 @@ async def grounding_bing_search(
         # Format results similar to bing_search
         results = []
         for url, data in url_citations.items():
+            print("grounding_bing_search***********\n")
+            print("url:" + url)
+            print("summary:" + data["summary"])
+            print("title:" + data["title"])
+
             result = {
                 "summary": data["summary"],
                 "title": data["title"],

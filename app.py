@@ -41,6 +41,7 @@ from agents.open_topic_class_generation.open_topic_class_generation_agents impor
 from agents.open_topic_class_generation.open_topic_class_generation_agents_grounding_bing import (
     create_team_grounding_with_bing,
 )
+from agents.tools.image_generate import image_generation_tool
 from config import CATCH_UP_AND_EXPLORE_BY_AI_AGENT, OPEN_TOPIC_CLASS_GENERATION_AGENT,CURRENT_AGENT_TEAM_NAME,OPEN_TOPIC_CLASS_GENERATION_AGENT_GROUNDING_WITH_BING
 
 

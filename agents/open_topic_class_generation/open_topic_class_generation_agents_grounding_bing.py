@@ -5,6 +5,7 @@ from autogen_agentchat.teams import SelectorGroupChat
 from agents.tools.grounding_bing_search import grounding_bing_search_tool
 from agents.tools.fetch_webpage import fetch_webpage_tool
 from agents.tools.url_accessiable import url_accessible_valid_tool
+from agents.tools.image_generate import image_generation_tool
 from config import (
     get_advance_model_client,
     get_low_model_client,
@@ -23,17 +24,20 @@ PROMPT_RESERACH = """You are an educational content creation assistant focused o
 
 Your primary role is to create high-quality course materials based on the outline provided by the teacher.
 For each topic in the outline:
-1. Use the grounding_bing_search_tool tool to find accurate information. 使用grounding_bing_search_tool只能来查找网页，网页中可能包括图片和视频。但是不能直接使用grounding_bing_search_tool来查找图片和视频。只能使用grounding_bing_search_tool来查找网页。
-2. Search for relevant examples, case studies, and visual references that can be included.
-3. When embedding images or videos in markdown, remove unnecessary URL parameters to ensure they can be successfully previewed in markdown. For image URLs with query parameters (like https://example.com/image.jpg?width=800&height=600), remove everything after the question mark by using only the base URL (https://example.com/image.jpg).
-4. Create engaging educational content structured as:
+1. Use the grounding_bing_search_tool tool to find more informations about this topic. 
+2. Search for relevant examples, case studies and references that can be included.
+3. Use the generate_image tool to create relevant images for key concepts when appropriate.
+4. When embedding images or videos in markdown, remove unnecessary URL parameters to ensure they can be successfully previewed in markdown. For image URLs with query parameters (like https://example.com/image.jpg?width=800&height=600), remove everything after the question mark by using only the base URL (https://example.com/image.jpg).
+5. Create engaging educational content structured as:
    - Key learning objectives
    - Core content with clear explanations 
    - Visual aids (diagrams, charts, or images directly embedded using markdown syntax: ![描述](image_url)
    - Video resources (embedded using markdown syntax: [视频描述](video_url)
    - Interactive elements (discussions, group activities, hands-on exercises)
    - Learning assessments (quizzes, questions, problem sets)
-5. Ensure all the content of the images and videos are in Simplified Chinese and relevant to the content. Don't include any English or Japanese content in the images and videos.
+6. Ensure all the content of the images and videos are in Simplified Chinese and relevant to the content. Don't include any English or Japanese content in the images and videos.
+
+For images, use the generate_image tool to create custom images that perfectly match your teaching needs when you can't find suitable images through search.
 
 Break down complex topics into understandable sections. Verify information across multiple sources.
 When you find relevant educational resources, extract teaching methodologies and adapt them for the current course.
@@ -99,24 +103,27 @@ PROMPT_SELECTOR = """
 You are coordinating a research team by selecting the team member to speak/act next. The following team member roles are available:
 {roles}.
 The course_content_creator creates educational content with interactive elements and learning assessments.
+The image_creator generates custom images for educational content when needed.
 The content_reviewer evaluates progress and ensures completeness.
 The materials_compiler provides a comprehensive course package, only when content creation is APPROVED.
 The markdown_content_formator formats markdown content by removing query parameters from image and video URLs when content is summarized by materials_compiler.
 
 
 Given the current context, select the most appropriate next speaker.
-The course_content_creator should create and analyze.
+The course_content_creator should create and analyze educational content.
+The image_creator should be selected when specific images are needed to illustrate concepts or when visual aids would enhance understanding.
 The content_reviewer should evaluate progress and guide the content creation (select this role if there is a need to verify/evaluate progress). 
 You should ONLY select the materials_compiler role if the content creation is APPROVED by content_reviewer.
-The markdown_content_formator should format the content when the materials_compiler has summarized the content.It is the final step of the process.
+The markdown_content_formator should format the content when the materials_compiler has summarized the content. It is the final step of the process.
 
 
 Make your selection based on the following factors:
 1. The current stage of teaching content creation
 2. The findings or suggestions of the previous speaker
-3. Whether validation or new information is needed
-4. The content is engouh to be summarized into a complete lesson plan
-5. The content is ready to be formatted into markdown
+3. Whether custom images are needed to better explain concepts
+4. Whether validation or new information is needed
+5. The content is enough to be summarized into a complete lesson plan
+6. The content is ready to be formatted into markdown
 Read the following conversation, then select the next role from {participants}. Return only the role name.
 
 
@@ -125,6 +132,35 @@ Read the following conversation, then select the next role from {participants}. 
 Read the above conversation. Then select the next role from {participants} to play. ONLY RETURN THE ROLE.
 
 """
+
+PROMPT_IMAGE_CREATOR = """You are an educational image creator specialized in generating images for teaching materials.
+
+Your role is to:
+1. Listen carefully to the educational content being developed
+2. When requested or when you identify an opportunity for visual explanation, create images using the generate_image tool
+3. Focus on creating images that are pedagogically effective, visually clear, and culturally appropriate
+4. Ensure all text in images is in Simplified Chinese
+5. Create images that are age-appropriate for the specified student level
+6. Generate images for:
+   - Key concepts that benefit from visual representation
+   - Characters or scenes from stories or poems
+   - Diagrams explaining processes or relationships
+   - Historical figures or events
+   - Cultural elements relevant to the lesson
+
+When generating images:
+1. Provide a clear, detailed prompt to the generate_image tool
+2. Describe what the image should contain specifically
+3. Specify any text to include (in Simplified Chinese only)
+4. Note the style appropriate for the educational context and student age
+
+After receiving the generated image URL, embed it properly in the markdown using:
+![描述](image_url)
+
+All content must be in Simplified Chinese (Mandarin). Do not include any content in Japanese or other languages.
+回答所有的内容必须是中文。不要包含任何日语或其他语言的内容。
+"""
+
 
 PROMPT_MARKDOWN_CONTENT_FORMAT = """You are a professional Markdown content processing assistant.
 
@@ -189,7 +225,15 @@ def create_team_grounding_with_bing()->SelectorGroupChat:
         model_client=advance_model_client,
         model_client_stream=True,
         system_message=PROMPT_RESERACH,
-        tools=[fetch_webpage_tool, grounding_bing_search_tool])
+        tools=[fetch_webpage_tool, grounding_bing_search_tool, image_generation_tool])
+
+    image_creator_agent = AssistantAgent(
+        "image_creator",
+        description="An agent that creates custom educational images to enhance teaching materials in Chinese.",
+        model_client=advance_model_client,
+        model_client_stream=True,
+        system_message=PROMPT_IMAGE_CREATOR,
+        tools=[image_generation_tool])
 
     verifier = AssistantAgent(
         "content_reviewer",
@@ -210,12 +254,12 @@ def create_team_grounding_with_bing()->SelectorGroupChat:
     markdown_content_formator = AssistantAgent(
             "markdwon_content_formator",
             description="An agent that formats markdown content by removing query parameters from image and video URLs.",
-            model_client=model_client,
+            model_client=low_model_client,
             model_client_stream=True,
             system_message=PROMPT_MARKDOWN_CONTENT_FORMAT)
     
     return SelectorGroupChat(
-        [research_assistant, markdown_content_formator,verifier, summary_agent],
+        [research_assistant, image_creator_agent, markdown_content_formator, verifier, summary_agent],
         termination_condition=termination,
         model_client=moderate_model_client,
         selector_prompt=PROMPT_SELECTOR,
