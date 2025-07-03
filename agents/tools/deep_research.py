@@ -53,13 +53,25 @@ def create_research_summary(
 
     print(f"Research summary written to '{filepath}'.")
 
-
+# Set up Azure credential and client
+credential = DefaultAzureCredential(
+    exclude_workload_identity_credential=True,
+    exclude_environment_credential=True,
+    exclude_managed_identity_credential=True,
+    exclude_shared_token_cache_credential=True,
+    exclude_visual_studio_code_credential=True,
+    exclude_developer_cli_credential=True,
+    exclude_cli_credential=False,
+    exclude_interactive_browser_credential=True,
+    exclude_powershell_credential=True
+)
+    
 project_client = AIProjectClient(
-    endpoint=os.environ["PROJECT_ENDPOINT"],
-    credential=DefaultAzureCredential(),
+    endpoint=os.environ["DEEP_RESEARCH_PROJECT_CONNECTION_STRING"],
+    credential=credential,
 )
 
-conn_id = project_client.connections.get(name=os.environ["BING_RESOURCE_NAME"]).id
+conn_id = project_client.connections.get(name=os.environ["DEEP_RESEARCH_BING_RESOURCE_NAME"]).id
 
 
 # Initialize a Deep Research tool with Bing Connection ID and Deep Research model deployment name
@@ -77,9 +89,9 @@ with project_client:
         # NOTE: To add Deep Research to an existing agent, fetch it with `get_agent(agent_id)` and then,
         # update the agent with the Deep Research tool.
         agent = agents_client.create_agent(
-            model=os.environ["MODEL_DEPLOYMENT_NAME"],
+            model=os.environ["DEEP_RESEARCH_CHAT_MODEL_DEPLOYMENT_NAME"],
             name="my-agent",
-            instructions="You are a helpful Agent that assists in researching scientific topics.",
+            instructions="You are a helpful Agent that assists in researching scientific & technical topics.",
             tools=deep_research_tool.definitions,
         )
 
@@ -95,7 +107,7 @@ with project_client:
             thread_id=thread.id,
             role="user",
             content=(
-                "Give me the latest research into quantum computing over the last year."
+                "我需要一篇关于MCP的报告"
             ),
         )
         print(f"Created message, ID: {message.id}")
@@ -129,5 +141,5 @@ with project_client:
 
         # Clean-up and delete the agent once the run is finished.
         # NOTE: Comment out this line if you plan to reuse the agent later.
-        agents_client.delete_agent(agent.id)
-        print("Deleted agent")
+        # agents_client.delete_agent(agent.id)
+        # print("Deleted agent")
