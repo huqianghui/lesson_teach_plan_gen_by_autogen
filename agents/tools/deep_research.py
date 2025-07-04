@@ -107,7 +107,32 @@ with project_client:
             thread_id=thread.id,
             role="user",
             content=(
-                "我需要一篇关于MCP的报告"
+                ''' 我需要一篇关于MCP的报告。整理一份详细的技术报告，内容涵盖以下内容：
+
+                    引言
+                        Model Context Protocol的背景和发展
+                        它作为function call扩展的意义及目标
+                    历史背景
+                        协议的起源和动机
+                        其在技术发展中的定位
+                        协议结构与工作原理
+                        详细描述协议的架构和组件
+                        数据流如何在协议中传递
+                        重点解析与function call的结合方式
+                    技术实现细节
+                        具体的实现机制
+                        使用的技术栈和关键算法
+                        数据格式和传输技术
+                    优势与应用案例
+                        与其他协议相比的主要技术或性能优势
+                        当前已知的实际应用场景
+                    与其他协议的比较
+                        功能、性能、兼容性等方面的对比分析
+                        潜在的改进方向
+                    总结与展望
+                        Model Context Protocol的未来发展方向
+                        潜在的技术革新与生态扩展 
+                    '''
             ),
         )
         print(f"Created message, ID: {message.id}")
