@@ -107,7 +107,14 @@ with project_client:
             thread_id=thread.id,
             role="user",
             content=(
-                ''' 我需要一篇关于MCP的报告。整理一份详细的技术报告，内容涵盖以下内容：
+                ''' 我需要一篇关于MCP的报告。
+                        1. 对MCP的语言偏好是中文
+                        2. 报告需要以技术白皮书风格编写
+                        3. 希望优先引用的权威来源是Anthropic
+                        4. 针对应用案例部分，是偏好开放源代码项目为例
+                        5. 报告预计字数在5000字以内
+                    
+                    整理一份详细的技术报告，内容涵盖以下内容：
 
                     引言
                         Model Context Protocol的背景和发展
@@ -132,6 +139,8 @@ with project_client:
                     总结与展望
                         Model Context Protocol的未来发展方向
                         潜在的技术革新与生态扩展 
+
+            不要再问更多的问题，调用deep research tool，仔细思考出报告内容。
                     '''
             ),
         )
