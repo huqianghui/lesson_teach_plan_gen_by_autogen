@@ -18,7 +18,7 @@ Ensure you have the following installed on your system:
 To clone this repository, run the following command in your terminal:
 
 ```bash
-git clone https://github.com/huqianghui/open_deep_research_by_autogen.git
+git clone https://github.com/huqianghui/lesson_teach_plan_gen_by_autogen.git
 cd open_deep_research_by_autogen
 ```
 

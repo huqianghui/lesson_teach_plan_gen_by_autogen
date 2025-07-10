@@ -90,7 +90,7 @@ with project_client:
         # update the agent with the Deep Research tool.
         agent = agents_client.create_agent(
             model=os.environ["DEEP_RESEARCH_CHAT_MODEL_DEPLOYMENT_NAME"],
-            name="my-agent",
+            name="deep-research-agent-demo01",
             instructions="You are a helpful Agent that assists in researching scientific & technical topics.",
             tools=deep_research_tool.definitions,
         )
