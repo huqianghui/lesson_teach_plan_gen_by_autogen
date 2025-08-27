@@ -1,3 +1,4 @@
+from concurrent.futures import thread
 from azure.ai.projects import AIProjectClient
 from azure.identity import DefaultAzureCredential
 import asyncio
@@ -55,7 +56,7 @@ async def fetch_page_content(url: str, max_length: Optional[int] = 50000) -> str
         return f"Error fetching content: {str(e)}"
 
 
-@cl.step(type="tool", name="grounding_bing_search")
+#@cl.step(type="tool", name="grounding_bing_search")
 async def grounding_bing_search(
     query: str,
     include_content: bool = True,
@@ -89,52 +90,62 @@ async def grounding_bing_search(
             exclude_powershell_credential=True
         )
 
-        project_client = AIProjectClient.from_connection_string(
+        project_client = AIProjectClient(
             credential=credential,
-            conn_str="eastus.api.azureml.ms;7a03e9b8-18d6-48e7-b186-0ec68da9e86f;ai-hub-rg;azure-ai-agent-east-us-prj"
+            endpoint="https://ai-foundary-qiah-east-us2.services.ai.azure.com/api/projects/deep-research-prj"
         )
 
-        agent = project_client.agents.get_agent("asst_a0xGpCD356KyMv0KmP4pGEWZ")
+        agents_client = project_client.agents
+        agent = agents_client.get_agent("asst_mSmcy0phSs4vL9MawO1olApb")
         
         # Create a new thread for each search request
-        thread = project_client.agents.create_thread()
-        print(f"Created new thread: {thread.id} for query: {query}")
+        # thread = project_client.agents.create_thread()
+        # print(f"Created new thread: {thread.id} for query: {query}")
+        thread = agents_client.threads.create()
+        print(f"Created thread, ID: {thread.id}")
+
 
         # Create message with user's query
-        message = project_client.agents.create_message(
+        message = agents_client.messages.create(
             thread_id=thread.id,
             role="user",
             content=query
         )
 
         # Process the query
-        run = project_client.agents.create_and_process_run(
+        run = agents_client.runs.create_and_process(
             thread_id=thread.id,
             agent_id=agent.id
         )
-        
+        print(f"Run finished with status: {run.status}")
+
+        if run.status == "failed":
+            print(f"Run failed: {run.last_error}")
+
+
         # Get all messages in the thread
-        messages = project_client.agents.list_messages(thread_id=thread.id)
+        messages = agents_client.messages.list(thread_id=thread.id)
         
         # Process citations from AI response
         url_citations = {}
-        for text_message in messages.text_messages:
-            message_data = text_message.as_dict()
-            if message_data['type'] == 'text' and 'annotations' in message_data['text']:
-                annotations = message_data['text'].get('annotations', [])
-                # Extract URL citations
-                for annotation in annotations:
-                    if annotation['type'] == 'url_citation' and 'url_citation' in annotation:
-                        summary = message_data['text'].get("value")
-                        url = annotation['url_citation']['url']
-                        title = annotation['url_citation']['title']
-                        
-                        # Store unique citations
-                        if url not in url_citations:
-                            url_citations[url] = {
-                                "title": title,
-                                "summary": summary
-                            }
+        for text_message in messages:
+            message_datas = text_message.content
+            for message_data in message_datas:
+                if message_data['type'] == 'text' and 'annotations' in message_data['text']:
+                    annotations = message_data['text'].get('annotations', [])
+                    # Extract URL citations
+                    for annotation in annotations:
+                        if annotation['type'] == 'url_citation' and 'url_citation' in annotation:
+                            summary = message_data['text'].get("value")
+                            url = annotation['url_citation']['url']
+                            title = annotation['url_citation']['title']
+                            
+                            # Store unique citations
+                            if url not in url_citations:
+                                url_citations[url] = {
+                                    "title": title,
+                                    "summary": summary
+                                }
 
         # Format results similar to bing_search
         results = []
